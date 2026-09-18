@@ -3,7 +3,7 @@ import {
   BUILT_IN_SOURCE, activeConfig, applyConfig, buildConfig, configSummary, isCustomConfig,
   onConfigChange, resetConfig,
 } from './config'
-import { allSpecies, getSpecies, stageCount } from './catalog'
+import { allDecor, allSpecies, getDecor, getSpecies, stageCount } from './catalog'
 
 afterEach(() => resetConfig())
 
@@ -68,5 +68,27 @@ describe('the live config', () => {
     resetConfig()
     expect(activeConfig().source.plantsCsv).toBe(BUILT_IN_SOURCE.plantsCsv)
     expect(isCustomConfig()).toBe(false)
+  })
+
+  it('ships a decor catalog, and keeps the garden playable without one', () => {
+    const shipped = buildConfig({})
+    expect(shipped.decor.length).toBeGreaterThan(0)
+    expect(configSummary(shipped).decor).toBe(shipped.decor.length)
+
+    // decor.csv is cosmetic, so an unreadable one costs you the ornaments and
+    // nothing else — unlike plants.csv, which throws and keeps the old config.
+    const broken = buildConfig({ decorCsv: 'id,name,kind,form\n' }) // a header and nothing under it
+    expect(broken.species.length).toBeGreaterThan(0)
+    expect(broken.decor).toEqual([])
+    expect(broken.warnings.some(w => w.includes('decor.csv'))).toBe(true)
+  })
+
+  it('swaps the decor catalog at runtime, like the species one', () => {
+    applyConfig({ decorCsv: 'id,name,kind,form,color,accent,petals,blurb\nobelisk,Obelisk,object,rock,#888,#444,9,\n' }, { persist: false })
+    expect(allDecor().map(d => d.id)).toEqual(['obelisk'])
+    expect(getDecor('bench')).toBeUndefined()
+    expect(isCustomConfig()).toBe(true)
+    resetConfig()
+    expect(getDecor('bench')?.name).toBe('Garden bench')
   })
 })

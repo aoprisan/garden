@@ -8,11 +8,14 @@
 //   fertilizer  — a time-boxed growth multiplier (the one multiplier in the game)
 //   gnome       — an auto-tender that works the active bed at the SAME capped
 //                 rate a walker would: comfort while you sit, never an advantage
-import type { Gardener, Rarity } from '../types'
-import { speciesByRarity } from './catalog'
+//   decor       — paths, fences, pots and ornaments, priced in decor.csv. The
+//                 one kind of stock that does nothing at all to growth: it is
+//                 how the garden gets designed rather than only filled.
+import type { Decor, Gardener, Rarity } from '../types'
+import { allDecor, getDecor, speciesByRarity } from './catalog'
 import { addSeeds } from './inventory'
 
-export type ShopKind = 'seed_packet' | 'fertilizer' | 'gnome'
+export type ShopKind = 'seed_packet' | 'fertilizer' | 'gnome' | 'decor'
 
 export interface ShopItem {
   id: string
@@ -28,6 +31,8 @@ export interface ShopItem {
   factor?: number
   /** fertilizer / gnome: how long the effect lasts, ms. */
   durationMs?: number
+  /** decor: which piece of decoration this buys. */
+  decorId?: string
 }
 
 export const STOCKPILE_MAX = 20
@@ -58,7 +63,45 @@ const GNOMES: ShopItem[] = [
 export const SHOP_ITEMS: ShopItem[] = [...PACKETS, ...FERTILIZERS, ...GNOMES]
 
 const byId = new Map(SHOP_ITEMS.map(i => [i.id, i]))
-export function getShopItem(id: string): ShopItem | undefined { return byId.get(id) }
+
+// --- decoration -------------------------------------------------------------
+// Decor stock is derived from the live decor.csv rather than written here, so a
+// swapped config restocks the shed. Never cache what these hand back across a
+// config change — ask again, same rule as the species catalog.
+
+const DECOR_PREFIX = 'decor:'
+
+/** The shed id an owned piece of decoration is counted under. */
+export function decorItemId(decorId: string): string { return `${DECOR_PREFIX}${decorId}` }
+
+/** The decor id behind a shed id, or null if that item isn't decoration. */
+export function decorIdOf(itemId: string): string | null {
+  return itemId.startsWith(DECOR_PREFIX) ? itemId.slice(DECOR_PREFIX.length) : null
+}
+
+function decorItem(decor: Decor): ShopItem {
+  return {
+    id: decorItemId(decor.id),
+    kind: 'decor',
+    label: decor.name,
+    petals: decor.petals,
+    blurb: decor.blurb,
+    decorId: decor.id,
+  }
+}
+
+/** Everything in the decoration aisle, in catalog order. */
+export function decorShopItems(): ShopItem[] {
+  return allDecor().map(decorItem)
+}
+
+export function getShopItem(id: string): ShopItem | undefined {
+  const fixed = byId.get(id)
+  if (fixed) return fixed
+  const decorId = decorIdOf(id)
+  const decor = decorId ? getDecor(decorId) : undefined
+  return decor ? decorItem(decor) : undefined
+}
 
 export interface ShopResult {
   ok: boolean
@@ -99,6 +142,8 @@ export function useItem(gardener: Gardener, itemId: string, now: number): ShopRe
     gardener.boost = { factor: item.factor!, expiresAt: now + item.durationMs! }
   } else if (item.kind === 'gnome') {
     gardener.gnomeUntil = Math.max(gardener.gnomeUntil ?? 0, now) + item.durationMs!
+  } else if (item.kind === 'decor') {
+    return { ok: false, reason: 'decoration is placed in the garden, not used here' }
   } else {
     return { ok: false, reason: 'seed packets open when you buy them' }
   }

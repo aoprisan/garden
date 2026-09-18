@@ -1,8 +1,8 @@
 // The chosen bed, up close: which plant is in it, how far along, how much more
-// walking it wants, and the three things you can do to it (tend by walking,
-// harvest a bloom, clear the bed).
+// walking it wants, and the things you can do to it (tend by walking, harvest a
+// bloom, clear the bed, take the decoration back to the shed).
 import type { Cell, Species } from '../types'
-import { getSpecies, stageCount, bloomUnits } from '../game/catalog'
+import { getDecor, getSpecies, stageCount, bloomUnits } from '../game/catalog'
 import { bloomProgress, unitsToBloom } from '../game/growth'
 import { isBloomed } from '../game/garden'
 import PlantSprite from './PlantSprite'
@@ -11,9 +11,10 @@ interface Props {
   cell: Cell | null
   onHarvest: (index: number) => void
   onClear: (index: number) => void
+  onRemoveDecor: (index: number, layer: 'ground' | 'decor') => void
 }
 
-export default function BedPanel({ cell, onHarvest, onClear }: Props) {
+export default function BedPanel({ cell, onHarvest, onClear, onRemoveDecor }: Props) {
   if (!cell) {
     return (
       <section className="panel bed-panel">
@@ -26,6 +27,8 @@ export default function BedPanel({ cell, onHarvest, onClear }: Props) {
   const plant = cell.plant
   const species: Species | undefined = plant ? getSpecies(plant.speciesId) : undefined
   const stages = stageCount()
+  const ground = getDecor(cell.ground)
+  const standing = getDecor(cell.decor)
 
   return (
     <section className="panel bed-panel">
@@ -34,7 +37,15 @@ export default function BedPanel({ cell, onHarvest, onClear }: Props) {
         {plant && <span className="tiny muted">stage {Math.min(plant.stage, stages)}/{stages}</span>}
       </div>
 
-      {!plant && <p className="tiny muted">Empty and ready. Sow a seed from the tray.</p>}
+      {!plant && (
+        <p className="tiny muted">
+          {standing && standing.kind !== 'pot'
+            ? `${standing.name} stands here — take it back to the shed to free the bed.`
+            : standing?.kind === 'pot'
+              ? `An empty ${standing.name.toLowerCase()}. Sow a seed into it from the tray.`
+              : 'Empty and ready. Sow a seed from the tray.'}
+        </p>
+      )}
 
       {plant && species && (
         <>
@@ -63,6 +74,25 @@ export default function BedPanel({ cell, onHarvest, onClear }: Props) {
             <button className="mini-btn danger" onClick={() => onClear(cell.index)}>clear bed</button>
           </div>
         </>
+      )}
+
+      {(ground || standing) && (
+        <div className="bed-decor">
+          {ground && (
+            <div className="tray-row">
+              <span className="seed-dot square" style={{ background: ground.color, borderColor: ground.accent }} />
+              <span className="item-name">{ground.name}</span>
+              <button className="mini-btn" onClick={() => onRemoveDecor(cell.index, 'ground')}>take back</button>
+            </div>
+          )}
+          {standing && (
+            <div className="tray-row">
+              <span className="seed-dot square" style={{ background: standing.color, borderColor: standing.accent }} />
+              <span className="item-name">{standing.name}</span>
+              <button className="mini-btn" onClick={() => onRemoveDecor(cell.index, 'decor')}>take back</button>
+            </div>
+          )}
+        </div>
       )}
     </section>
   )

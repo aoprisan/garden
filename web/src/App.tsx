@@ -5,13 +5,14 @@ import { usePwaUpdate } from './hooks/usePwaUpdate'
 import { useWalkMode, walkModeSupported } from './hooks/useWalkMode'
 import { haptic, playBloomSound } from './sound'
 import type { Garden, Gardener } from './types'
-import { getSpecies } from './game/catalog'
+import { getDecor, getSpecies } from './game/catalog'
 import { knobs } from './game/config'
-import { gardenStats, isGrowing } from './game/garden'
+import { gardenStats, isBlockedByDecor, isGrowing } from './game/garden'
 import { msUntilNextDay, plantsLeftToday } from './game/daily'
-import { currentMultiplier, isGnomeWorking } from './game/shop'
+import { currentMultiplier, decorItemId, isGnomeWorking } from './game/shop'
 import GardenField from './components/GardenField'
 import SeedTray from './components/SeedTray'
+import DecorTray from './components/DecorTray'
 import BedPanel from './components/BedPanel'
 import ShedPanel from './components/ShedPanel'
 import WaterButton from './components/WaterButton'
@@ -34,6 +35,9 @@ export default function App() {
   const [now, setNow] = useState(() => Date.now())
   const [almanacOpen, setAlmanacOpen] = useState(false)
   const [configOpen, setConfigOpen] = useState(false)
+  /** the ornament the design tray has armed: while it's set, tapping a bed puts
+   *  it there instead of choosing the bed. */
+  const [placing, setPlacing] = useState<string | null>(null)
   const toastSeq = useRef(0)
   const lastGrowthToast = useRef(0)
   const pulseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -102,6 +106,7 @@ export default function App() {
     onWorldReset: r => {
       setGardener(null)
       setAlmanacOpen(false)
+      setPlacing(null)
       game.getGarden().then(g => setGarden({ ...g }))
       pushToast('GARDEN', `${r.reason} — starting over`, 'warn')
     },
@@ -115,6 +120,18 @@ export default function App() {
     if (active != null && isGrowing(garden.cells[active]?.plant ?? null)) return active
     return garden.cells.find(c => isGrowing(c.plant))?.index ?? null
   }, [garden])
+
+  // The tray disarms itself when the last one leaves the shed, so a tap on a bed
+  // never silently does nothing.
+  useEffect(() => {
+    if (placing && gardener && (gardener.items[decorItemId(placing)] || 0) <= 0) setPlacing(null)
+  }, [placing, gardener])
+
+  /** A tap on a bed: place the armed ornament, or choose where the steps go. */
+  const handleCellTap = useCallback((index: number) => {
+    if (placing) void game.placeDecor(index, placing)
+    else game.setActiveCell(index)
+  }, [placing])
 
   const selectedCell = useMemo(() => {
     if (!garden || garden.activeCell == null) return null
@@ -180,7 +197,8 @@ export default function App() {
           <GardenField
             garden={garden}
             pulseCell={pulseCell}
-            onSelect={i => game.setActiveCell(i)}
+            onSelect={handleCellTap}
+            placing={placing ? getDecor(placing)?.name ?? null : null}
           />
           {stats && (
             <div className="field-readout tiny">
@@ -199,10 +217,15 @@ export default function App() {
             <SeedTray
               gardener={gardener}
               targetCell={garden.activeCell}
-              targetEmpty={garden.activeCell != null && !garden.cells[garden.activeCell]?.plant}
+              targetEmpty={
+                garden.activeCell != null
+                && !garden.cells[garden.activeCell]?.plant
+                && !isBlockedByDecor(garden.cells[garden.activeCell])
+              }
               msToNextDay={msUntilNextDay(now)}
               onPlant={id => garden.activeCell != null && game.plantSeed(garden.activeCell, id)}
             />
+            <DecorTray gardener={gardener} placing={placing} onArm={setPlacing} />
             <Tutorial garden={garden} gardener={gardener} />
           </aside>
 
@@ -211,6 +234,7 @@ export default function App() {
               cell={selectedCell}
               onHarvest={i => game.harvest(i)}
               onClear={i => game.clearCell(i)}
+              onRemoveDecor={(i, layer) => game.removeDecor(i, layer)}
             />
             <ShedPanel
               gardener={gardener}

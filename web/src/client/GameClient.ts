@@ -38,6 +38,14 @@ export interface GameClient {
   /** Collect a bloom: seeds back, petals earned, cell freed. */
   harvest(cellIndex: number): Promise<void>
 
+  // --- decoration ---
+  /** Put a piece of decoration from the shed into a cell. Ground goes under a
+   *  plant, an object needs the bed empty, a pot may hold one. Swapping hands
+   *  the old piece back to the shed. */
+  placeDecor(cellIndex: number, decorId: string): Promise<void>
+  /** Take the ground covering or the standing piece back to the shed. */
+  removeDecor(cellIndex: number, layer: 'ground' | 'decor'): Promise<void>
+
   // --- potting shed ---
   /** Spend petals (seed packet, fertilizer, gnome). */
   buyItem(itemId: string): Promise<void>

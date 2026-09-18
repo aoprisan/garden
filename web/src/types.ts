@@ -25,6 +25,32 @@ export interface Species {
   blurb: string
 }
 
+/** What a piece of decoration is for. `ground` is a tile treatment that a plant
+ *  can stand on; `object` takes the cell to itself; `pot` takes the cell but
+ *  still holds a plant (the brief's garden is designed, not only filled). */
+export type DecorKind = 'ground' | 'object' | 'pot'
+
+/** How a piece of decoration is drawn. The first four are flat — they lie in
+ *  the ground plane — and the rest stand up and are billboarded like a plant. */
+export type DecorForm =
+  | 'path' | 'gravel' | 'grass' | 'water'
+  | 'fence' | 'rock' | 'bench' | 'lantern' | 'birdbath' | 'arch' | 'pot' | 'trough'
+
+/** One row of decor.csv: a thing you can put in the garden that isn't a plant.
+ *  Decoration never touches growth — it costs petals and changes the view. */
+export interface Decor {
+  id: string
+  name: string
+  kind: DecorKind
+  form: DecorForm
+  /** main colour, and the darker one it's shaded with. */
+  color: string
+  accent: string
+  /** price in petals. */
+  petals: number
+  blurb: string
+}
+
 /** A plant occupying one cell. `stage` is the visual stage 0..stages: 0 is bare
  *  seeded soil, `stages` (10 by default) is full bloom. */
 export interface Plant {
@@ -44,6 +70,12 @@ export interface Cell {
   x: number
   y: number
   plant: Plant | null
+  /** decor id painted into the tile (a path, gravel, grass) — a plant may still
+   *  stand on it. */
+  ground: string | null
+  /** decor id standing in the cell: an `object` (which rules a plant out) or a
+   *  `pot` (which holds one). */
+  decor: string | null
 }
 
 export interface Garden {

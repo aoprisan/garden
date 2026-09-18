@@ -192,6 +192,11 @@ body {
 .tray-row { display: flex; align-items: center; gap: 7px; padding: 4px 2px; border-bottom: 1px solid rgba(196, 164, 120, 0.1); }
 .tray-row .item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .seed-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3); }
+/* Decoration isn't a seed: a square swatch, in the piece's own two colours. */
+.seed-dot.square { border-radius: 2px; border: 1px solid; box-shadow: none; }
+.tray-row.armed { background: rgba(127, 179, 86, 0.14); }
+.tray-row .shed-item { flex: 1; }
+.bed-decor { margin-top: 8px; border-top: 1px solid rgba(196, 164, 120, 0.15); padding-top: 6px; }
 
 .day-allowance {
   background: rgba(127, 179, 86, 0.14);
