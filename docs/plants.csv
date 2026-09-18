@@ -1,0 +1,19 @@
+id,name,family,rarity,form,petal_color,leaf_color,growth_units,seed_yield,petal_yield,blurb
+marigold,Marigold,Aster,common,daisy,#f6a23c,#4f7a3a,3000,2,6,A hardy border flower that shrugs off a missed day.
+cosmos,Cosmos,Aster,common,daisy,#e88ab4,#5d8a45,3500,2,7,Tall and airy; sways at the slightest breeze.
+chamomile,Chamomile,Herb,common,daisy,#f4efd8,#6f9a53,2750,2,5,Small white daisies that smell of warm apples.
+tulip,Tulip,Lily,common,cup,#e2574c,#4a7c3f,4000,2,8,One clean cup on one clean stem.
+bluebell,Bluebell,Lily,common,bell,#6b7ad6,#456f37,3750,2,7,Nodding bells that ring for nobody.
+strawberry,Strawberry,Rose,common,berry,#e04b52,#4a7c3f,4250,3,8,Runners everywhere; fruit if you keep walking.
+tomato,Tomato,Nightshade,common,berry,#e2523b,#527f3a,4750,3,9,A vine that wants a stake and a long summer.
+basil,Basil,Mint,common,herb,#7fae5a,#4f8437,2500,3,5,Pinch the tips and it thickens.
+mint,Mint,Mint,common,herb,#84c07a,#3f7a43,2400,3,4,Give it a pot or it takes the whole bed.
+lavender,Lavender,Mint,common,spike,#9a7fd1,#7a9a6a,3250,3,6,Grey-green spikes; the bees find it first.
+poppy,Poppy,Papaver,uncommon,cup,#d7353a,#5f8b4a,5000,2,12,Paper petals on a hairy stem.
+foxglove,Foxglove,Plantain,uncommon,spike,#b46ad0,#3f6b33,6000,2,14,A tower of speckled thimbles.
+snapdragon,Snapdragon,Plantain,uncommon,spike,#f2705a,#4d7b3e,5500,2,13,Squeeze a flower and it opens its jaw.
+sunflower,Sunflower,Aster,uncommon,daisy,#f2c53d,#4c7f34,6500,3,15,Follows the light all day and sleeps facing east.
+morning-glory,Morning Glory,Bindweed,uncommon,vine,#7fa8e8,#3e7040,5250,3,12,Opens at dawn and is done by lunch.
+dahlia,Dahlia,Aster,rare,globe,#c8386f,#3f6b3a,8500,1,26,A hundred petals wound into a sphere.
+peony,Peony,Paeonia,rare,globe,#f2a0bf,#48753c,9000,1,28,Slow for years, then enormous.
+wisteria,Wisteria,Pea,rare,vine,#a08ad8,#4b7745,9500,2,30,Waterfalls of bloom on old wood.

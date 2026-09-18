@@ -1,0 +1,18 @@
+{
+  "name": "Garden — walk to grow",
+  "short_name": "Garden",
+  "description": "Sow seeds in an isometric plot and walk: every step grows your flowers through ten stages, from seed to full bloom.",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1a1410",
+  "theme_color": "#1a1410",
+  "id": ".",
+  "start_url": ".",
+  "scope": ".",
+  "icons": [
+    { "src": "favicon.svg", "type": "image/svg+xml", "sizes": "any" },
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "icon-maskable-512.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}

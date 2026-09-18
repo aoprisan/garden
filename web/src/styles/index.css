@@ -1,0 +1,365 @@
+/* Base shell: palette, typography, panels, buttons, toasts, overlays.
+   The garden itself (the 3D field, the sprites, the dial) is in garden.css. */
+
+:root {
+  --soil: #1a1410;
+  --soil-2: #241c16;
+  --panel: rgba(38, 30, 24, 0.86);
+  --panel-line: rgba(196, 164, 120, 0.22);
+  --text: #f0e7d8;
+  --muted: #a99883;
+  --green: #7fb356;
+  --accent: #e8a13c;
+  --warn: #e0705c;
+  --radius: 14px;
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --serif: 'Fraunces', Georgia, 'Times New Roman', serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: var(--mono);
+  color: var(--text);
+  background:
+    radial-gradient(1100px 700px at 50% -10%, #3a2e22 0%, transparent 60%),
+    radial-gradient(800px 500px at 90% 110%, #2b3a22 0%, transparent 65%),
+    var(--soil);
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root {
+  display: grid;
+  grid-template-columns: minmax(230px, 280px) 1fr minmax(230px, 300px);
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'top top top'
+    'left stage right';
+  gap: 14px;
+  /* The bottom padding clears the fixed watering dial (~190px with its labels
+     and the Walk Mode toggle) so nothing sits under it. */
+  padding: 12px 14px 215px;
+  min-height: 100%;
+}
+
+/* --- top bar --- */
+.topbar {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.logo { display: flex; flex-direction: column; line-height: 1.1; }
+.logo-main { font-family: var(--serif); font-size: 26px; letter-spacing: 0.04em; }
+.logo-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.18em; text-transform: uppercase; }
+
+.topbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.counters { display: flex; gap: 12px; }
+.counters b { font-weight: 600; }
+
+/* --- layout areas --- */
+.stage { grid-area: stage; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.left-stack { grid-area: left; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.right-stack { grid-area: right; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+/* --- panels --- */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-line);
+  border-radius: var(--radius);
+  padding: 12px;
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.panel-head.as-button {
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+  width: 100%;
+}
+
+.panel-label {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tiny { font-size: 11px; line-height: 1.5; }
+.muted { color: var(--muted); }
+.good { color: var(--green); }
+.warn, .red { color: var(--warn); }
+.accent { color: var(--accent); }
+.item-name { font-size: 13px; font-weight: 500; }
+.blurb { color: var(--muted); font-style: italic; margin: 2px 0; }
+
+.rarity { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+.rarity.common { color: var(--muted); }
+.rarity.uncommon { color: #8fc0e0; }
+.rarity.rare { color: var(--accent); }
+
+.scroll-y { overflow-y: auto; overscroll-behavior: contain; }
+.scroll-y::-webkit-scrollbar { width: 6px; }
+.scroll-y::-webkit-scrollbar-thumb { background: rgba(196, 164, 120, 0.3); border-radius: 3px; }
+
+/* --- buttons --- */
+.btn, .btn-ghost, .mini-btn, .close-btn {
+  font-family: var(--mono);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 120ms ease, border-color 120ms ease, opacity 120ms ease;
+}
+
+.btn {
+  background: var(--green);
+  color: #16200e;
+  border: 0;
+  padding: 10px 16px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+.btn:hover { background: #8fc563; }
+
+.btn-ghost {
+  background: rgba(240, 231, 216, 0.06);
+  border: 1px solid var(--panel-line);
+  color: var(--text);
+  padding: 7px 11px;
+  font-size: 12px;
+}
+.btn-ghost:hover { background: rgba(240, 231, 216, 0.12); }
+.btn-ghost.danger { color: var(--warn); border-color: rgba(224, 112, 92, 0.4); }
+.btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.mini-btn {
+  background: rgba(240, 231, 216, 0.07);
+  border: 1px solid var(--panel-line);
+  color: var(--text);
+  padding: 4px 9px;
+  font-size: 11px;
+}
+.mini-btn:hover:not(:disabled) { background: rgba(240, 231, 216, 0.14); }
+.mini-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.mini-btn.primary { background: rgba(127, 179, 86, 0.22); border-color: rgba(127, 179, 86, 0.5); color: #cfe8b4; }
+.mini-btn.danger { color: var(--warn); border-color: rgba(224, 112, 92, 0.35); }
+
+.close-btn {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 2px 4px;
+}
+.close-btn:hover { color: var(--text); }
+
+.field {
+  width: 100%;
+  background: rgba(20, 16, 12, 0.7);
+  border: 1px solid var(--panel-line);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 9px 11px;
+}
+.field:focus { outline: none; border-color: rgba(127, 179, 86, 0.6); }
+.form-error { color: var(--warn); font-size: 12px; }
+
+/* --- seed tray --- */
+.seed-tray .tray-list { max-height: 260px; display: flex; flex-direction: column; gap: 4px; }
+.tray-row { display: flex; align-items: center; gap: 7px; padding: 4px 2px; border-bottom: 1px solid rgba(196, 164, 120, 0.1); }
+.tray-row .item-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seed-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.3); }
+
+.day-allowance {
+  background: rgba(127, 179, 86, 0.14);
+  border: 1px solid rgba(127, 179, 86, 0.3);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+.day-allowance.spent { background: rgba(224, 112, 92, 0.1); border-color: rgba(224, 112, 92, 0.3); }
+.plant-hint { margin: 0; }
+
+/* --- bed panel --- */
+.bed-body { display: flex; gap: 10px; align-items: flex-start; }
+.bed-portrait {
+  width: 74px; height: 92px; flex: none;
+  background: rgba(20, 16, 12, 0.5);
+  border: 1px solid var(--panel-line);
+  border-radius: 10px;
+  padding: 4px;
+}
+.bed-facts { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.bed-actions { display: flex; gap: 6px; }
+
+.grow-bar, .cell-bar { background: rgba(20, 16, 12, 0.7); border-radius: 4px; overflow: hidden; }
+.grow-bar { height: 7px; }
+.grow-bar > span { display: block; height: 100%; transition: width 200ms ease; }
+
+/* --- potting shed --- */
+.shed-list { max-height: 300px; display: flex; flex-direction: column; gap: 10px; }
+.shed-group { display: flex; flex-direction: column; gap: 5px; }
+.shed-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.shed-item { display: flex; flex-direction: column; min-width: 0; }
+.shed-buttons { display: flex; gap: 4px; flex: none; }
+.active-boosts { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* --- tutorial --- */
+.tutorial-card { border-color: rgba(232, 161, 60, 0.35); }
+.tutorial-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tutorial-card p { margin: 0; }
+
+/* --- overlays & modals --- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 9, 7, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  z-index: 40;
+  backdrop-filter: blur(3px);
+}
+
+.modal {
+  width: min(680px, 100%);
+  max-height: min(86vh, 760px);
+  gap: 10px;
+}
+.modal-head { display: flex; align-items: center; justify-content: space-between; }
+
+.onboard-card { width: min(460px, 100%); text-align: center; align-items: stretch; }
+.onboard-title { font-family: var(--serif); font-size: 24px; }
+.onboard-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.onboard-sub b { color: var(--text); }
+.starting-tray { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.starting-seed { width: 62px; display: flex; flex-direction: column; align-items: center; }
+.starting-seed svg { width: 46px; height: 58px; }
+.starting-seed span { color: var(--muted); text-align: center; line-height: 1.2; }
+
+.almanac-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  max-height: 60vh;
+}
+.almanac-card {
+  border: 1px solid var(--panel-line);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(20, 16, 12, 0.45);
+}
+.almanac-card.unknown { opacity: 0.45; filter: grayscale(0.8); }
+.almanac-art { height: 92px; }
+.almanac-art svg { width: 100%; height: 100%; }
+
+/* --- config panel --- */
+.config-modal { width: min(720px, 100%); }
+.config-summary { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); }
+.config-status { padding: 6px 9px; border-radius: 8px; background: rgba(20, 16, 12, 0.6); }
+.config-body { display: flex; flex-direction: column; gap: 12px; max-height: 56vh; }
+.config-note { margin: 0; line-height: 1.6; }
+.config-file { display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid rgba(196, 164, 120, 0.12); padding-bottom: 10px; }
+.config-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+.config-paste { display: flex; flex-direction: column; gap: 6px; }
+.config-textarea { min-height: 130px; font-size: 11px; resize: vertical; }
+.config-warnings ul { margin: 4px 0 0; padding-left: 16px; color: var(--muted); }
+.config-footer { display: flex; justify-content: space-between; gap: 8px; }
+
+/* --- toasts --- */
+.toast-stack {
+  position: fixed;
+  top: 64px;
+  right: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 50;
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(30, 24, 18, 0.94);
+  border: 1px solid var(--panel-line);
+  border-left-width: 3px;
+  border-radius: 8px;
+  padding: 7px 11px;
+  font-size: 12px;
+  max-width: 300px;
+  animation: toast-in 180ms ease;
+}
+.toast-tag { font-size: 9px; letter-spacing: 0.14em; color: var(--muted); }
+.toast--good, .toast--bloom { border-left-color: var(--green); }
+.toast--bloom { border-left-color: var(--accent); }
+.toast--warn { border-left-color: var(--warn); }
+.toast--growth, .toast--info { border-left-color: rgba(196, 164, 120, 0.5); }
+
+@keyframes toast-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+
+/* --- pwa prompt & boot --- */
+.pwa-prompt {
+  position: fixed;
+  left: 14px;
+  bottom: 14px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(30, 24, 18, 0.95);
+  border: 1px solid var(--panel-line);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 12px;
+}
+.pwa-prompt h3 { margin: 0 0 2px; font-size: 13px; }
+.pwa-prompt p { margin: 0; color: var(--muted); }
+
+.boot-screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.3em;
+  color: var(--muted);
+  background: var(--soil);
+  z-index: 60;
+}
+
+/* --- responsive: one column, panels under the plot --- */
+@media (max-width: 900px) {
+  #root {
+    grid-template-columns: 1fr;
+    grid-template-areas: 'top' 'stage' 'left' 'right';
+    padding: 10px 10px 235px;
+  }
+  .toast-stack { top: auto; bottom: 245px; right: 10px; left: 10px; }
+  .toast { max-width: none; }
+  .pwa-prompt { left: 10px; right: 10px; bottom: 225px; }
+}
