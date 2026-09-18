@@ -11,9 +11,10 @@ what would add the most, with the smallest step first.
    throttle — a Capacitor shell over the OS pedometer (as `aoprisan/click` has) is the missing half.
 2. **Health-platform import.** Apple Health / Google Fit as a second step source, so a day's steps
    count even when the app never ran. Same seam.
-3. **More of the garden.** Paths, fences, a pond, and pots that hold a plant off-grid — the brief
-   calls the garden something you *design*, not just fill. Cells already carry x/y, so decoration
-   is another thing a cell can hold.
+3. **More of the garden.** Paths, fences, a pond, pots and ornaments are in (`docs/decor.csv` → the
+   design tray), so the plot is designed as well as filled. What's left is the rest of that idea: a
+   fence that joins up along its neighbours rather than sitting as one panel per cell, ornaments
+   that span more than a single tile, and a plot you can earn more room in.
 4. **Seasons and weather.** A cosmetic first pass (light, sky, ground tint by month), then a
    gameplay one: species that only bloom in a season, rain that tends for you.
 
@@ -32,4 +33,5 @@ what would add the most, with the smallest step first.
 
 - Steps stop when the screen locks (a browser limit, not a bug) — see #1.
 - The plot is a fixed grid; there is no expansion to earn yet.
+- Decoration is per-cell: a fence is a panel on its tile, not a run along an edge.
 - Everything is local to one browser: clearing site data starts the garden over.

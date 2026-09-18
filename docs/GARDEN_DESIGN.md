@@ -25,6 +25,7 @@
 | Brief | Where it lives |
 |---|---|
 | Isometric grid, one plant per cell | `components/GardenField.tsx` — a CSS 3D ground plane; `game/garden.ts` holds the cells |
+| Gardens players **design**, not only fill | `docs/decor.csv` → `game/decor.ts`; `components/DecorTray.tsx` places it, `DecorSprite.tsx` draws it |
 | Rotate the field around Y | drag the plot, the ⟲ / ⟳ buttons, or ← / → |
 | Seeds in an inventory | `game/inventory.ts`, `components/SeedTray.tsx` |
 | Ten seeds of different kinds to start | `starting_seeds.*` in the tuning CSV (2 marigold, 2 chamomile, 2 basil, tulip, bluebell, cosmos, strawberry) |
@@ -53,6 +54,13 @@ bloom is earned.
 petals, the soft currency. Petals buy seed packets (the only source of species you have never
 grown), fertilizer (the one growth multiplier in the game) and a garden gnome that tends at the
 same capped rate while you are away from the phone. Nothing is bought with money.
+
+**Decoration is bought, never earned by walking.** Paths, fences, pots and ornaments cost petals like
+everything else in the shed, but they are the one kind of stock that does nothing to growth: no
+multiplier, no head start, no penalty. A cell carries two decoration slots beside its plant —
+`ground` (a path or lawn, which a plant still stands on) and `decor` (an object, which takes the bed
+to itself, or a pot, which holds a plant). Placing costs nothing and taking a piece back returns it,
+so the only thing in the garden that can be lost by changing your mind is still an unbloomed seed.
 
 **A bloom left standing is safe.** Nothing wilts, nothing dies, and no plant is lost to time — the
 garden is a place you come back to, not a chore. Clearing a bed before the bloom does lose the

@@ -3,6 +3,7 @@ import { LocalGameClient } from './LocalGameClient'
 import { resetConfig, applyConfig, knobs } from '../game/config'
 import { getSpecies, bloomUnits, stageCount } from '../game/catalog'
 import { isBloomed } from '../game/garden'
+import { decorShopItems } from '../game/shop'
 import type { GameEvent } from '../types'
 
 const SAVE_KEY = 'gd.save.v1'
@@ -235,5 +236,54 @@ describe('a bloom left standing', () => {
     client.tend(0, 'step')
     expect((await client.getGarden()).cells[0].plant!.totalUnits).toBe(banked)
     expect((await client.me())!.totalUnits).toBe(before)
+  })
+})
+
+describe('decorating through the client', () => {
+  it('buys a piece, places it, and takes it back to the shed', async () => {
+    const client = new LocalGameClient()
+    const gardener = await client.register('Designer')
+    const bench = decorShopItems().find(i => i.decorId === 'bench')!
+    gardener.petals = bench.petals
+
+    await client.buyItem(bench.id)
+    expect((await client.me())!.items[bench.id]).toBe(1)
+
+    await client.placeDecor(3, 'bench')
+    expect((await client.getGarden()).cells[3].decor).toBe('bench')
+    expect((await client.me())!.items[bench.id]).toBe(0) // out of the shed…
+
+    await client.removeDecor(3, 'decor')
+    expect((await client.getGarden()).cells[3].decor).toBeNull()
+    expect((await client.me())!.items[bench.id]).toBe(1) // …and back into it
+  })
+
+  it('refuses to place what isn’t in the shed, and says so', async () => {
+    const client = new LocalGameClient()
+    await client.register('Designer')
+    const notices: string[] = []
+    client.on(e => { if (e.type === 'notice') notices.push(e.data.text) })
+
+    await client.placeDecor(0, 'bench')
+    expect((await client.getGarden()).cells[0].decor).toBeNull()
+    expect(notices.join(' ')).toMatch(/no garden bench in the shed/i)
+  })
+
+  it('keeps decoration across a reload, and out of the way of growth', async () => {
+    const client = new LocalGameClient()
+    const gardener = await client.register('Designer')
+    const path = decorShopItems().find(i => i.decorId === 'stone-path')!
+    gardener.petals = path.petals
+    await client.buyItem(path.id)
+
+    const speciesId = Object.keys(gardener.seeds)[0]
+    await client.plantSeed(0, speciesId)
+    await client.placeDecor(0, 'stone-path')
+    const steps = walkUntilBloom(client, 0)
+    expect(steps).toBeGreaterThan(0) // a decorated bed grows exactly as any other
+
+    await new Promise(r => setTimeout(r, 700)) // let the debounced save land
+    const reloaded = await new LocalGameClient().getGarden()
+    expect(reloaded.cells[0].ground).toBe('stone-path')
   })
 })

@@ -1,9 +1,9 @@
 # Garden (web)
 
 The whole game: React 19 + TypeScript + Vite, no backend. State lives in `localStorage`
-(`gd.save.v1`), the species catalog and the numbers live in CSVs that are parsed in the browser at
-boot, and a service worker makes it work offline — which matters, because the game is played on a
-walk.
+(`gd.save.v1`), the species catalog, the ornaments and the numbers live in CSVs that are parsed in
+the browser at boot, and a service worker makes it work offline — which matters, because the game is
+played on a walk.
 
 ## Commands
 
@@ -28,6 +28,12 @@ bloom** and can be **harvested** for its seeds back plus **petals**. Petals buy 
 species), fertilizer (a timed growth multiplier) and a gnome (auto-tends the chosen bed at the same
 capped rate). You may sow **two seeds a day**; clearing beds is unlimited.
 
+Petals also buy **decoration** — paths, a lawn, a pond, fences, pots and ornaments — which is the
+other half of the brief: a garden you *design*, not only fill. A cell holds a ground covering (a
+plant still stands on it) and one standing piece, which either takes the bed to itself or is a pot
+that holds a plant. Decoration never touches growth, costs nothing to place, and comes back to the
+shed when you take it out.
+
 Nothing grows on a timer. The one background tick handles the day rolling over, fertilizer lapsing
 and the gnome — everything else happens because you moved.
 
@@ -43,14 +49,16 @@ touching the UI:
   active CSVs, apply/revert, persistence, change subscribers), `plants` (CSV → species),
   `catalog` (derived species tables, rebuilt on every config change — never cache its arrays across
   one), `tuning` (the knobs CSV and the built-in `DEFAULT_KNOBS`, plus the stage-cost curve),
-  `garden` (the grid: sow, clear, harvest), `growth` (units → stages → blooms), `daily` (the day
-  clock and the planting allowance), `inventory`, `shop` (petals), `throttle` (the rate meter),
+  `garden` (the grid: sow, clear, harvest, decorate), `growth` (units → stages → blooms), `decor`
+  (the ornament CSV), `daily` (the day clock and the planting allowance), `inventory`, `shop`
+  (petals, including the decoration aisle), `throttle` (the rate meter),
   `pedometer` (step detection + walking/jogging classification) and `balanceHarness` (headless
   deterministic sim).
 - **`src/components/`** — the UI: `GardenField` (the rotatable isometric plot), `PlantSprite`
-  (every species at every stage, drawn procedurally from its CSV row), `SeedTray`, `BedPanel`,
-  `ShedPanel`, `WaterButton` (the dial, the throttle meter and the Walk Mode toggle), `Almanac`,
-  `Onboarding`, `Tutorial`, `ConfigPanel`, `ToastSystem`, `PwaPrompts`, `ErrorBoundary`.
+  (every species at every stage, drawn procedurally from its CSV row), `DecorSprite` (every ornament,
+  the same way), `SeedTray`, `DecorTray` (arm a piece, then tap the beds), `BedPanel`, `ShedPanel`,
+  `WaterButton` (the dial, the throttle meter and the Walk Mode toggle), `Almanac`, `Onboarding`,
+  `Tutorial`, `ConfigPanel`, `ToastSystem`, `PwaPrompts`, `ErrorBoundary`.
 - **`src/hooks/`** — `useGameClient` (wires the client's events into React state), `useWalkMode`
   (steps → tends, plus the banked-steps drip), `usePwaUpdate`.
 - **`src/steps/`** — the step-source seam: `DeviceMotionStepSource` (accelerometer →
@@ -60,23 +68,27 @@ touching the UI:
 
 ## Live game data (no rebuild, no backend)
 
-Two files — `docs/plants.csv` (the species) and a tuning CSV (`key,value`) — are read at runtime by
-`game/config.ts`. The **⚙ Data** panel downloads exactly what the game is running on, takes an
-upload or a paste, applies it immediately and remembers it in `localStorage` (`gd.config.v1`) until
-reverted; `docs/plants.csv` and the built-in defaults in `tuning.ts` are what ships.
+Three files — `docs/plants.csv` (the species), `docs/decor.csv` (the ornaments) and a tuning CSV
+(`key,value`) — are read at runtime by `game/config.ts`. The **⚙ Data** panel downloads exactly what
+the game is running on, takes an upload or a paste, applies it immediately and remembers it in
+`localStorage` (`gd.config.v1`) until reverted; the two CSVs in `docs/` and the built-in defaults in
+`tuning.ts` are what ships.
 
 Applying any file **re-makes the garden** (`GameClient.resetGame()` → wipes `gd.save.v1`, emits
 `world_reset`) because species ids, the grid size and the stage count all move. "Reset garden" is
 the same path with the data untouched. A species file with nothing readable in it is rejected and
-the running config is kept; softer problems (an unknown rarity, a starting seed naming a species
-that isn't there, an unknown tuning key) surface as warnings in the panel.
+the running config is kept; a decor file with nothing readable in it costs you the ornaments and
+nothing else, because decoration is cosmetic. Softer problems (an unknown rarity, a starting seed
+naming a species that isn't there, an unknown tuning key, an ornament with no price) surface as
+warnings in the panel.
 
 ## Tuning knobs
 
 `tuning.csv` (editable live): plot size, growth stages, seeds per day, day length, units per step,
 the spread fraction, the global growth scale and stage ramp, the throttle, and the starting tray.
-Still code-side: `game/shop.ts` (petal prices and durations), `game/pedometer.ts` (step-detection
-thresholds), `game/growth.ts` (the loop itself). Watch `npm run balance` after changing any of it.
+Still code-side: `game/shop.ts` (petal prices and durations for seeds, fertilizer and gnomes —
+ornament prices are a column in `decor.csv`), `game/pedometer.ts` (step-detection thresholds),
+`game/growth.ts` (the loop itself). Watch `npm run balance` after changing any of it.
 
 ## Icons
 

@@ -1,0 +1,13 @@
+id,name,kind,form,color,accent,petals,blurb
+stone-path,Stone path,ground,path,#9a958c,#6f6a62,4,Flagstones worn smooth; walk here without muddying your boots.
+gravel,Gravel,ground,gravel,#b0a795,#7d7568,3,Crunches underfoot and keeps the weeds down.
+lawn,Lawn patch,ground,grass,#6f9a53,#4f7a3a,3,A neat square of mown green.
+pond,Pond,object,water,#5a8fb8,#2f5d80,20,Still water with something orange moving under it.
+picket-fence,Picket fence,object,fence,#e8e2d2,#b9b09a,6,White palings — a border, or a whole boundary if you keep buying.
+boulder,Boulder,object,rock,#8f8b83,#63605a,5,It was here before the garden was.
+bench,Garden bench,object,bench,#8a6a45,#5e472e,15,Somewhere to sit at the end of the walk.
+lantern,Stone lantern,object,lantern,#a8a49b,#6e6a62,12,Lit at dusk; moths approve.
+birdbath,Bird bath,object,birdbath,#bdb9ae,#7d7a72,18,Sparrows first, then everyone.
+rose-arch,Rose arch,object,arch,#9a7f5f,#6d5940,22,An arch to walk under, already thick with old wood.
+terracotta-pot,Terracotta pot,pot,pot,#c0703f,#8d4d29,8,Holds one plant off the soil — the bed underneath is still a bed.
+stone-trough,Stone trough,pot,trough,#a9a396,#78736a,14,Heavy, cold, and perfect for herbs.

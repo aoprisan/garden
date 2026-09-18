@@ -1,10 +1,11 @@
 // The live config store: the single place the game reads its data from, and the
 // seam that lets a designer swap that data at runtime.
 //
-// Two CSVs make up a config. The ones shipped with the build are docs/plants.csv
-// (bundled as text) plus the hand-authored defaults in tuning.ts serialized back
-// to CSV — so "download current" always gives you exactly what the running game
-// is using, and re-uploading it changes nothing.
+// Three CSVs make up a config. The ones shipped with the build are
+// docs/plants.csv and docs/decor.csv (bundled as text) plus the hand-authored
+// defaults in tuning.ts serialized back to CSV — so "download current" always
+// gives you exactly what the running game is using, and re-uploading it changes
+// nothing.
 //
 // Applying a config rebuilds the catalog in place and notifies subscribers;
 // catalog.ts rebuilds its derived tables and the client re-makes the garden
@@ -13,17 +14,20 @@
 // uploaded config survives a reload — and a file you never touched keeps
 // tracking the shipped one.
 import plantsCsvBuiltIn from '../../../docs/plants.csv?raw'
+import decorCsvBuiltIn from '../../../docs/decor.csv?raw'
 import { parsePlantsCsv } from './plants'
-import type { Species } from '../types'
+import { parseDecorCsv } from './decor'
+import type { Decor, Species } from '../types'
 import { DEFAULT_KNOBS, formatTuningCsv, parseTuningCsv, type Knobs } from './tuning'
 
-export type ConfigFileKey = 'plantsCsv' | 'tuningCsv'
+export type ConfigFileKey = 'plantsCsv' | 'decorCsv' | 'tuningCsv'
 
 export type ConfigSource = Record<ConfigFileKey, string>
 
 export interface GameConfig {
   source: ConfigSource
   species: Species[]
+  decor: Decor[]
   knobs: Knobs
   /** non-fatal problems from the CSVs, for the Config panel to show. */
   warnings: string[]
@@ -40,6 +44,12 @@ export const CONFIG_FILES: Array<{ key: ConfigFileKey; label: string; filename: 
     blurb: 'one row per species: look, rarity, growth units, what a bloom gives back',
   },
   {
+    key: 'decorCsv',
+    label: 'Decoration',
+    filename: 'decor.csv',
+    blurb: 'one row per ornament: paths, fences, pots — what petals buy to design the plot',
+  },
+  {
     key: 'tuningCsv',
     label: 'Tuning numbers',
     filename: 'tuning.csv',
@@ -49,6 +59,7 @@ export const CONFIG_FILES: Array<{ key: ConfigFileKey; label: string; filename: 
 
 export const BUILT_IN_SOURCE: ConfigSource = {
   plantsCsv: plantsCsvBuiltIn,
+  decorCsv: decorCsvBuiltIn,
   tuningCsv: formatTuningCsv(DEFAULT_KNOBS),
 }
 
@@ -62,15 +73,26 @@ export function buildConfig(patch: Partial<ConfigSource>): GameConfig {
   const source: ConfigSource = { ...BUILT_IN_SOURCE, ...stripBlanks(patch) }
   const tuning = parseTuningCsv(source.tuningCsv)
   const plants = parsePlantsCsv(source.plantsCsv)
+  // Decoration is cosmetic, so a broken decor file costs you the ornaments and
+  // leaves the garden playable — unlike plants.csv, which throws.
+  const decor = readDecor(source.decorCsv)
 
-  const warnings = [...plants.warnings, ...tuning.warnings]
+  const warnings = [...plants.warnings, ...decor.warnings, ...tuning.warnings]
   const known = new Set(plants.species.map(s => s.id))
   for (const id of Object.keys(tuning.knobs.startingSeeds)) {
     if (!known.has(id)) warnings.push(`starting_seeds.${id}: no such species in plants.csv — ignored`)
   }
 
   const custom = (Object.keys(source) as ConfigFileKey[]).filter(k => source[k] !== BUILT_IN_SOURCE[k])
-  return { source, species: plants.species, knobs: tuning.knobs, warnings, custom }
+  return { source, species: plants.species, decor: decor.decor, knobs: tuning.knobs, warnings, custom }
+}
+
+function readDecor(text: string): ReturnType<typeof parseDecorCsv> {
+  try {
+    return parseDecorCsv(text)
+  } catch (err) {
+    return { decor: [], warnings: [`decor.csv could not be read (${message(err)}) — no decoration in the shed`] }
+  }
 }
 
 function stripBlanks(patch: Partial<ConfigSource>): Partial<ConfigSource> {
@@ -116,6 +138,7 @@ export function message(err: unknown): string {
 export function activeConfig(): GameConfig { return active }
 export function knobs(): Knobs { return active.knobs }
 export function speciesList(): Species[] { return active.species }
+export function decorList(): Decor[] { return active.decor }
 export function isCustomConfig(): boolean { return active.custom.length > 0 }
 
 /** Subscribe to config swaps. Called after `active` is updated, so a listener
@@ -165,6 +188,7 @@ export function configSummary(config: GameConfig = active) {
   return {
     species: config.species.length,
     families: families.size,
+    decor: config.decor.length,
     cells: Math.round(config.knobs.gardenWidth) * Math.round(config.knobs.gardenHeight),
     stages: Math.round(config.knobs.stages),
     startingSeeds: Object.values(config.knobs.startingSeeds).reduce((a, b) => a + b, 0),

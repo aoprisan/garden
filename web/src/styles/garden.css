@@ -28,6 +28,9 @@
   justify-content: center;
 }
 .field-scene:active { cursor: grabbing; }
+/* While the design tray is armed, a tap plants an ornament rather than choosing
+   a bed — the cursor is the only warning a mouse user gets. */
+.field-scene.placing, .field-scene.placing .cell-hit { cursor: copy; }
 
 .field-plane {
   position: relative;
@@ -77,6 +80,27 @@
   padding: 0;
   cursor: pointer;
 }
+
+/* Ground coverings (and a pond, which is flat even though it takes the whole
+   cell): painted into the tile, left lying in the ground plane. */
+.cell-ground {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cell.decorated { background: rgba(84, 62, 43, 0.35); }
+
+/* Plant and ornament share one billboarded box so a pot can be drawn over the
+   plant standing in it — both SVGs are bottom-anchored, so stacking them
+   absolutely lines them up on the same ground line. */
+.sprite-layers {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+.sprite-layers > svg { position: absolute; inset: 0; width: 100%; height: 100%; }
 
 /* The plant: anchored to the bottom-centre of its tile and counter-rotated by
    GardenField so it stands upright however the plot is spun. */

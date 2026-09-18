@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import {
   SHOP_ITEMS, buyItem, useItem, currentMultiplier, isGnomeWorking, expireBoosts,
-  normalizeGardener, getShopItem,
+  normalizeGardener, getShopItem, decorShopItems, decorItemId, decorIdOf,
 } from './shop'
-import { resetConfig } from './config'
+import { applyConfig, resetConfig } from './config'
 import { totalSeeds } from './inventory'
 import { makeGardener } from './testUtils'
 
@@ -59,5 +59,35 @@ describe('the potting shed', () => {
     expect(fixed.petals).toBe(0)
     expect(fixed.items).toEqual({})
     expect(fixed.boost).toBeNull()
+  })
+})
+
+describe('the decoration aisle', () => {
+  beforeEach(() => resetConfig())
+
+  it('stocks whatever decor.csv holds, priced from it', () => {
+    const items = decorShopItems()
+    expect(items.length).toBeGreaterThan(0)
+    expect(items.every(i => i.kind === 'decor' && i.petals >= 0 && !!i.decorId)).toBe(true)
+    const bench = items.find(i => i.decorId === 'bench')!
+    expect(getShopItem(bench.id)).toMatchObject({ id: bench.id, petals: bench.petals })
+    expect(decorIdOf(bench.id)).toBe('bench')
+    expect(decorIdOf('fert-2x-10m')).toBeNull()
+  })
+
+  it('restocks when the config is swapped', () => {
+    applyConfig({ decorCsv: 'id,name,kind,form,color,accent,petals,blurb\nobelisk,Obelisk,object,rock,#888,#444,9,\n' }, { persist: false })
+    expect(decorShopItems().map(i => i.decorId)).toEqual(['obelisk'])
+    expect(getShopItem(decorItemId('bench'))).toBeUndefined()
+  })
+
+  it('buys into the shed, and is placed in the garden rather than used here', () => {
+    const gardener = makeGardener({ petals: 100 })
+    const bench = decorShopItems().find(i => i.decorId === 'bench')!
+    expect(buyItem(gardener, bench.id).ok).toBe(true)
+    expect(gardener.items[bench.id]).toBe(1)
+    expect(gardener.petals).toBe(100 - bench.petals)
+    expect(useItem(gardener, bench.id, NOW).reason).toMatch(/placed in the garden/)
+    expect(currentMultiplier(gardener, NOW)).toBe(1) // and it never touches growth
   })
 })

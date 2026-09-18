@@ -5,17 +5,18 @@
 import type { GameClient, ConnectionState, TendSource } from './GameClient'
 import { EventBus } from './GameClient'
 import type { Garden, Gardener, GameEvent } from '../types'
-import { getSpecies, defaultSpeciesId, stageCount } from '../game/catalog'
+import { getDecor, getSpecies, defaultSpeciesId, stageCount } from '../game/catalog'
 import { knobs, onConfigChange } from '../game/config'
 import {
   createGarden, normalizeGarden, plantSeed, clearCell, harvestCell, isGrowing,
+  placeDecor, removeDecor,
 } from '../game/garden'
 import { tendGarden } from '../game/growth'
 import { dayIndexAt, plantsLeftToday, rollDay } from '../game/daily'
 import { RateMeter } from '../game/throttle'
 import {
   buyItem as shopBuy, useItem as shopUse, currentMultiplier, isGnomeWorking,
-  expireBoosts, normalizeGardener, getShopItem,
+  expireBoosts, normalizeGardener, getShopItem, decorItemId,
 } from '../game/shop'
 
 const SAVE_KEY = 'gd.save.v1'
@@ -251,6 +252,48 @@ export class LocalGameClient implements GameClient {
     this.bus.emit({ type: 'garden_update', data: this.garden })
     this.bus.emit({ type: 'gardener_update', data: g })
     this.scheduleSave()
+  }
+
+  // --- decoration ---
+  /** Place a piece of decoration from the shed. Cosmetic, free to place, and
+   *  swapping returns the old piece — an ornament is never lost, only a seed
+   *  is. */
+  async placeDecor(cellIndex: number, decorId: string): Promise<void> {
+    const g = this.gardener; if (!g) return
+    const decor = getDecor(decorId)
+    if (!decor) { this.notify({ text: 'unknown decoration', tone: 'warn' }); return }
+    const itemId = decorItemId(decorId)
+    if ((g.items[itemId] || 0) <= 0) {
+      this.notify({ text: `no ${decor.name.toLowerCase()} in the shed — buy one with petals`, tone: 'warn' })
+      return
+    }
+
+    const r = placeDecor(this.garden, cellIndex, decorId)
+    if (!r.ok) { this.notify({ text: r.reason ?? 'cannot put that there', tone: 'warn' }); return }
+
+    g.items[itemId] -= 1
+    if (r.replaced) this.stock(g, r.replaced)
+    this.notify({ text: `Placed ${decor.name.toLowerCase()}`, tone: 'good' })
+    this.bus.emit({ type: 'garden_update', data: this.garden })
+    this.bus.emit({ type: 'gardener_update', data: g })
+    this.scheduleSave()
+  }
+
+  async removeDecor(cellIndex: number, layer: 'ground' | 'decor'): Promise<void> {
+    const g = this.gardener; if (!g) return
+    const r = removeDecor(this.garden, cellIndex, layer)
+    if (!r.ok) { this.notify({ text: r.reason ?? 'nothing to take back', tone: 'warn' }); return }
+    this.stock(g, r.removed)
+    this.notify({ text: `${getDecor(r.removed)?.name ?? 'It'} is back in the shed`, tone: 'info' })
+    this.bus.emit({ type: 'garden_update', data: this.garden })
+    this.bus.emit({ type: 'gardener_update', data: g })
+    this.scheduleSave()
+  }
+
+  /** Put a piece of decoration back on the shed shelf. */
+  private stock(g: Gardener, decorId: string): void {
+    const itemId = decorItemId(decorId)
+    g.items[itemId] = (g.items[itemId] || 0) + 1
   }
 
   // --- potting shed ---

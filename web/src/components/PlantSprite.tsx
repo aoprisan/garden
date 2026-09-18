@@ -8,6 +8,7 @@
 // sprite can be planted on a tile and billboarded upright by <GardenField>.
 import { useMemo } from 'react'
 import type { PlantForm, Species } from '../types'
+import { rng, shade } from './spriteKit'
 
 interface Props {
   species: Species
@@ -16,41 +17,23 @@ interface Props {
   stages: number
   /** stable per-cell variation, so two marigolds aren't identical twins. */
   seed?: number
+  /** false for a plant in a pot — the pot is drawn over the bed, so a mound of
+   *  soil would stick out around it. */
+  soil?: boolean
   className?: string
 }
 
 const GROUND = 124
-
-/** Deterministic 0..1 noise — same cell, same plant, every render. */
-function rng(seed: number): () => number {
-  let s = (seed || 1) >>> 0
-  return () => {
-    s ^= s << 13; s >>>= 0
-    s ^= s >> 17
-    s ^= s << 5; s >>>= 0
-    return s / 4294967296
-  }
-}
 
 /** Growth eases off: the early stages shoot up, the last ones fill out. */
 function easeOut(t: number): number {
   return 1 - Math.pow(1 - t, 1.8)
 }
 
-function shade(hex: string, amount: number): string {
-  const v = hex.replace('#', '')
-  const full = v.length === 3 ? v.split('').map(c => c + c).join('') : v
-  const n = parseInt(full, 16)
-  const to = amount < 0 ? 0 : 255
-  const k = Math.abs(amount)
-  const mix = (c: number) => Math.round(c + (to - c) * k)
-  return `rgb(${mix((n >> 16) & 255)}, ${mix((n >> 8) & 255)}, ${mix(n & 255)})`
-}
-
-export default function PlantSprite({ species, stage, stages, seed = 1, className }: Props) {
+export default function PlantSprite({ species, stage, stages, seed = 1, soil = true, className }: Props) {
   const parts = useMemo(
-    () => draw(species, Math.max(0, Math.min(stages, stage)), Math.max(1, stages), seed),
-    [species, stage, stages, seed],
+    () => draw(species, Math.max(0, Math.min(stages, stage)), Math.max(1, stages), seed, soil),
+    [species, stage, stages, seed, soil],
   )
   return (
     <svg className={className} viewBox="0 0 100 130" width="100%" height="100%" aria-hidden="true">
@@ -59,7 +42,7 @@ export default function PlantSprite({ species, stage, stages, seed = 1, classNam
   )
 }
 
-function draw(species: Species, stage: number, stages: number, seed: number) {
+function draw(species: Species, stage: number, stages: number, seed: number, soil: boolean) {
   const rand = rng(seed * 2654435761 + species.id.length * 97)
   const t = stage / stages
   const grown = easeOut(t)
@@ -67,11 +50,13 @@ function draw(species: Species, stage: number, stages: number, seed: number) {
   const petal = species.petalColor
   const nodes: React.ReactNode[] = []
 
-  // The bed: a mound of turned soil, always there.
-  nodes.push(
-    <ellipse key="soil" cx="50" cy={GROUND} rx="26" ry="7" fill="#4b3a2a" opacity="0.9" />,
-    <ellipse key="soil2" cx="50" cy={GROUND - 2} rx="20" ry="5" fill="#5c4632" />,
-  )
+  // The bed: a mound of turned soil, unless the plant is standing in a pot.
+  if (soil) {
+    nodes.push(
+      <ellipse key="soil" cx="50" cy={GROUND} rx="26" ry="7" fill="#4b3a2a" opacity="0.9" />,
+      <ellipse key="soil2" cx="50" cy={GROUND - 2} rx="20" ry="5" fill="#5c4632" />,
+    )
+  }
 
   if (stage === 0) {
     // Just sown: a seed sitting in the dark.
