@@ -1,0 +1,239 @@
+/* The plot: a CSS 3D ground plane the player can spin, its cells, the plants
+   standing on it, and the watering dial. GardenField.tsx does the maths; this
+   file does the look. */
+
+.field-wrap {
+  width: 100%;
+  /* The plot is square-ish and tall; on a short window it has to shrink or it
+     would run under the fixed watering dial. */
+  max-width: min(640px, calc(100vh - 400px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-scene {
+  width: 100%;
+  /* Taller than the plot: grown plants stand well above their bed and would
+     otherwise be clipped at the top of the scene. */
+  aspect-ratio: 1 / 0.92;
+  align-items: flex-end;
+  padding-bottom: 4%;
+  perspective: 1100px;
+  touch-action: pan-y;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.field-scene:active { cursor: grabbing; }
+
+.field-plane {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 90ms linear;
+  background:
+    linear-gradient(180deg, rgba(92, 70, 50, 0.95), rgba(64, 48, 34, 0.95));
+  border-radius: 6px;
+  box-shadow: 0 0 0 6px rgba(50, 38, 27, 0.9), 0 30px 60px rgba(0, 0, 0, 0.55);
+}
+
+/* --- cells --- */
+.cell {
+  position: absolute;
+  transform-style: preserve-3d;
+  /* A cell needs a 3D transform of its own, however trivial: inside a
+     preserve-3d plane Chrome hit-tests an untransformed child against the
+     PARENT's plane, so without this a tap lands on .field-plane and no bed is
+     ever selected (elementFromPoint still reports the cell, which makes the bug
+     invisible in a DOM test — hence the note). */
+  transform: translateZ(0.01px);
+  border: 1px solid rgba(26, 20, 16, 0.55);
+  background: rgba(104, 79, 56, 0.55);
+}
+.cell.planted { background: rgba(84, 62, 43, 0.75); }
+.cell.active {
+  background: rgba(127, 179, 86, 0.28);
+  border-color: rgba(127, 179, 86, 0.75);
+  box-shadow: inset 0 0 12px rgba(127, 179, 86, 0.35);
+}
+.cell.bloomed { background: rgba(232, 161, 60, 0.18); }
+.cell.pulse { animation: cell-pulse 450ms ease-out; }
+
+@keyframes cell-pulse {
+  0% { box-shadow: inset 0 0 0 rgba(127, 179, 86, 0.8); }
+  35% { box-shadow: inset 0 0 22px rgba(127, 179, 86, 0.85); }
+  100% { box-shadow: inset 0 0 0 rgba(127, 179, 86, 0); }
+}
+
+/* The whole tile is the hit target — it lies in the rotated plane, so the
+   browser hit-tests it in 3D for free. */
+.cell-hit {
+  position: absolute;
+  inset: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+/* The plant: anchored to the bottom-centre of its tile and counter-rotated by
+   GardenField so it stands upright however the plot is spun. */
+.cell-sprite {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 130%;
+  height: 230%;
+  margin-left: -65%;
+  transform-origin: 50% 100%;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.45));
+}
+.cell-sprite svg { width: 100%; height: 100%; }
+
+/* The per-bed bar is noise on a full plot — it belongs to the bed you're
+   working, where it answers "how close is this one?". */
+.cell:not(.active) .cell-bar { display: none; }
+
+.cell-bar {
+  width: 54%;
+  height: 3px;
+  margin-top: 2px;
+  background: rgba(20, 16, 12, 0.75);
+}
+.cell-bar > span { display: block; height: 100%; background: var(--green); transition: width 180ms ease; }
+
+.cell-ready {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #16200e;
+  background: var(--accent);
+  border-radius: 3px;
+  padding: 0 4px;
+  margin-top: 2px;
+}
+
+.field-controls { display: flex; align-items: center; gap: 12px; }
+.field-hint { font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+.field-readout { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+
+/* --- the watering dial --- */
+.water-area {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 22px 12px;
+  border-radius: 24px;
+  /* The dial floats over the page; on a phone the panels scroll under it, so it
+     carries its own soft plate to stay legible. */
+  background: radial-gradient(60% 70% at 50% 55%, rgba(26, 20, 16, 0.94) 0%, rgba(26, 20, 16, 0.72) 65%, rgba(26, 20, 16, 0) 100%);
+  z-index: 30;
+}
+
+.water-target { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+.dial { position: relative; display: flex; align-items: center; justify-content: center; }
+
+.dial-ring {
+  position: absolute;
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  border: 1px dashed rgba(196, 164, 120, 0.3);
+  animation: dial-spin 22s linear infinite;
+  /* Decoration only: the ring is wider than the button and would otherwise
+     swallow every press (it is positioned, the button is not). */
+  pointer-events: none;
+}
+@keyframes dial-spin { to { transform: rotate(360deg); } }
+
+.water-btn {
+  position: relative; /* paint above the decorative ring */
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 2px solid rgba(127, 179, 86, 0.55);
+  background: radial-gradient(circle at 34% 30%, #4d6c35, #2b3a20);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+  transition: transform 90ms ease, box-shadow 90ms ease;
+}
+.water-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.water-btn.pressing { transform: scale(0.94); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); }
+.per-tend { font-size: 11px; font-weight: 400; color: var(--green); letter-spacing: 0; }
+
+.water-area.boosted .water-btn { border-color: rgba(232, 161, 60, 0.75); }
+
+.drop {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #8fc0e0;
+  pointer-events: none;
+  animation: drop-fly 500ms ease-out forwards;
+}
+@keyframes drop-fly {
+  to { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+}
+
+.throttle-meter {
+  width: 128px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(20, 16, 12, 0.8);
+  overflow: hidden;
+}
+.throttle-meter > span { display: block; height: 100%; background: var(--green); transition: width 200ms ease; }
+.throttle-meter.hot > span { background: var(--warn); }
+
+.tend-count { font-size: 11px; color: var(--muted); }
+.rate-warn { font-size: 11px; color: var(--warn); }
+
+.walk-toggle {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-line);
+  background: rgba(30, 24, 18, 0.92);
+  color: var(--text);
+  cursor: pointer;
+}
+.walk-toggle.on { border-color: rgba(127, 179, 86, 0.6); background: rgba(127, 179, 86, 0.2); }
+.walk-toggle.on.jogging { border-color: rgba(232, 161, 60, 0.7); background: rgba(232, 161, 60, 0.2); }
+
+@media (max-width: 900px) {
+  .field-wrap { max-width: 100%; }
+  .water-btn { width: 84px; height: 84px; }
+  .dial-ring { width: 104px; height: 104px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dial-ring { animation: none; }
+  .field-plane { transition: none; }
+  .cell.pulse { animation: none; }
+}
