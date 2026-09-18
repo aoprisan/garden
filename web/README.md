@@ -78,6 +78,14 @@ the spread fraction, the global growth scale and stage ramp, the throttle, and t
 Still code-side: `game/shop.ts` (petal prices and durations), `game/pedometer.ts` (step-detection
 thresholds), `game/growth.ts` (the loop itself). Watch `npm run balance` after changing any of it.
 
+## Icons
+
+`public/favicon.svg` (the tab), plus PNGs for the places that will not take an SVG: `icon-192`,
+`icon-512`, a `maskable` 512 whose subject sits inside Android's safe circle, and
+`apple-touch-icon.png` — iOS ignores SVG icons for Add to Home Screen and would otherwise put a
+screenshot of the page there. All five are one drawing: `node scripts/render-icons.mjs` regenerates
+the PNGs from it (Playwright, installed ad hoc — see the header of that file).
+
 ## Deployment
 
 `.github/workflows/deploy-pages.yml` builds `web/` and publishes to GitHub Pages on every push to
